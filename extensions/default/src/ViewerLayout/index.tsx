@@ -156,6 +156,20 @@ function ViewerLayout({
         extensionManager={extensionManager}
         servicesManager={servicesManager}
         appConfig={appConfig}
+        hasLeftPanels={hasLeftPanels}
+        isLeftPanelClosed={leftPanelClosedState}
+        onToggleLeftPanel={() => {
+          if (!hasLeftPanels) {
+            return;
+          }
+
+          if (leftPanelClosedState) {
+            leftPanelProps.onOpen();
+            return;
+          }
+
+          leftPanelProps.onClose();
+        }}
       />
       <div
         className="relative flex w-full flex-row flex-nowrap items-stretch overflow-hidden bg-black"

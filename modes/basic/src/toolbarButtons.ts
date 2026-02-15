@@ -30,6 +30,13 @@ const toolbarButtons: Button[] = [
     },
   },
   {
+    id: 'DentalMeasurementTools',
+    uiType: 'ohif.toolButtonList',
+    props: {
+      buttonSection: true,
+    },
+  },
+  {
     id: 'MoreTools',
     uiType: 'ohif.toolButtonList',
     props: {
@@ -472,6 +479,98 @@ const toolbarButtons: Button[] = [
       tooltip: i18n.t('Buttons:Length Tool'),
       commands: setToolActiveToolbar,
       evaluate: 'evaluate.cornerstoneTool',
+    },
+  },
+  {
+    id: 'DentalPALength',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-length',
+      label: 'PA length',
+      tooltip: 'PA length',
+      commands: [
+        {
+          ...setToolActiveToolbar,
+          commandOptions: {
+            ...setToolActiveToolbar.commandOptions,
+            toolName: 'Length',
+          },
+        },
+        {
+          commandName: 'setDentalActiveMeasurement',
+          commandOptions: { measurementId: 'DentalPALength' },
+        },
+      ],
+      evaluate: 'evaluate.dentalMeasurementTool',
+    },
+  },
+  {
+    id: 'DentalCanalAngle',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-angle',
+      label: 'Canal Angle',
+      tooltip: 'Canal Angle',
+      commands: [
+        {
+          ...setToolActiveToolbar,
+          commandOptions: {
+            ...setToolActiveToolbar.commandOptions,
+            toolName: 'Angle',
+          },
+        },
+        {
+          commandName: 'setDentalActiveMeasurement',
+          commandOptions: { measurementId: 'DentalCanalAngle' },
+        },
+      ],
+      evaluate: 'evaluate.dentalMeasurementTool',
+    },
+  },
+  {
+    id: 'DentalCrownWidth',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-length',
+      label: 'Crown Width',
+      tooltip: 'Crown Width',
+      commands: [
+        {
+          ...setToolActiveToolbar,
+          commandOptions: {
+            ...setToolActiveToolbar.commandOptions,
+            toolName: 'Length',
+          },
+        },
+        {
+          commandName: 'setDentalActiveMeasurement',
+          commandOptions: { measurementId: 'DentalCrownWidth' },
+        },
+      ],
+      evaluate: 'evaluate.dentalMeasurementTool',
+    },
+  },
+  {
+    id: 'DentalRootLength',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-length',
+      label: 'Root Length',
+      tooltip: 'Root Length',
+      commands: [
+        {
+          ...setToolActiveToolbar,
+          commandOptions: {
+            ...setToolActiveToolbar.commandOptions,
+            toolName: 'Length',
+          },
+        },
+        {
+          commandName: 'setDentalActiveMeasurement',
+          commandOptions: { measurementId: 'DentalRootLength' },
+        },
+      ],
+      evaluate: 'evaluate.dentalMeasurementTool',
     },
   },
   {

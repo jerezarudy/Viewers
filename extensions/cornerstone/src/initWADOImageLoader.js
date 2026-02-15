@@ -25,6 +25,7 @@ export default function initWADOImageLoader(
       Math.max(navigator.hardwareConcurrency - 1, 1),
       appConfig.maxNumberOfWebWorkers
     ),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     beforeSend: function (xhr) {
       //TODO should be removed in the future and request emitted by DicomWebDataSource
       const sourceConfig = extensionManager.getActiveDataSource()?.[0].getConfig() ?? {};

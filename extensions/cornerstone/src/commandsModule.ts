@@ -773,6 +773,39 @@ function commandsModule({
       utils.downloadCSVReport(measurementService.getMeasurements(measurementFilter));
     },
 
+    /**
+     * Download the JSON report for the measurements.
+     */
+    downloadJSONMeasurementsReport: ({ measurementFilter }) => {
+      const measurements = measurementService.getMeasurements(measurementFilter);
+
+      if (!measurements?.length) {
+        return;
+      }
+
+      const safeMeasurements = measurements.map(m => ({
+        uid: m.uid,
+        label: m.label,
+        // toolName: m.toolName,
+        referenceStudyUID: m.referenceStudyUID,
+        referenceSeriesUID: m.referenceSeriesUID,
+        SOPInstanceUID: m.SOPInstanceUID,
+        FrameOfReferenceUID: m.FrameOfReferenceUID,
+        displayText: m.displayText,
+        data: m.data,
+        // points: m.points,
+        // textBox: m.textBox,
+        referencedImageId: m.referencedImageId,
+        frameNumber: m.frameNumber,
+      }));
+
+      const blob = new Blob([JSON.stringify(safeMeasurements, null, 2)], {
+        type: 'application/json;charset=utf-8;',
+      });
+
+      utils.downloadBlob(blob, { filename: 'MeasurementReport.json' });
+    },
+
     downloadCSVSegmentationReport: ({ segmentationId }) => {
       const segmentation = segmentationService.getSegmentation(segmentationId);
 
@@ -827,11 +860,29 @@ function commandsModule({
       const renderContent = customizationService.getCustomization('ui.labellingComponent');
 
       if (!labelConfig) {
+        let dentalDefaultValue = '';
+        try {
+          const dentalEnabled = sessionStorage.getItem('ohif.dental.enabled') === '1';
+          const toothSelectorEnabled =
+            sessionStorage.getItem('ohif.dental.toothSelectorEnabled') === '1';
+          const selectedTooth = sessionStorage.getItem('ohif.dental.selectedTooth') || '';
+          const preset = sessionStorage.getItem('ohif.dental.annotationPreset') || '';
+
+          // Prefer showing only the selected tooth number when available.
+          if (dentalEnabled && toothSelectorEnabled && selectedTooth) {
+            dentalDefaultValue = selectedTooth;
+          } else if (dentalEnabled && preset) {
+            dentalDefaultValue = preset;
+          }
+        } catch {
+          // ignore storage errors
+        }
+
         const label = await callInputDialog({
           uiDialogService,
           title: i18n.t('Tools:Edit Arrow Text'),
           placeholder: data?.data?.label || i18n.t('Tools:Enter new text'),
-          defaultValue: data?.data?.label || '',
+          defaultValue: data?.data?.label || dentalDefaultValue || '',
         });
 
         callback?.(label);
@@ -844,6 +895,25 @@ function commandsModule({
         renderContent,
       });
       callback?.(value);
+    },
+
+    setDentalActiveMeasurement: ({ measurementId }: { measurementId?: string }) => {
+      try {
+        const id = measurementId || '';
+        sessionStorage.setItem('ohif.dental.activeMeasurementId', id);
+
+        // Selecting a dental measurement tool should turn off the tooth selector UI.
+        if (id) {
+          sessionStorage.setItem('ohif.dental.toothSelectorEnabled', '0');
+          window.dispatchEvent(
+            new CustomEvent('ohif:dental:measurementToolSelected', {
+              detail: { measurementId: id },
+            })
+          );
+        }
+      } catch {
+        // ignore storage errors
+      }
     },
 
     toggleCine: () => {
@@ -2479,6 +2549,9 @@ function commandsModule({
     downloadCSVMeasurementsReport: {
       commandFn: actions.downloadCSVMeasurementsReport,
     },
+    downloadJSONMeasurementsReport: {
+      commandFn: actions.downloadJSONMeasurementsReport,
+    },
     setViewportWindowLevel: {
       commandFn: actions.setViewportWindowLevel,
     },
@@ -2493,6 +2566,9 @@ function commandsModule({
     },
     setToolActiveToolbar: {
       commandFn: actions.setToolActiveToolbar,
+    },
+    setDentalActiveMeasurement: {
+      commandFn: actions.setDentalActiveMeasurement,
     },
     setToolEnabled: {
       commandFn: actions.setToolEnabled,

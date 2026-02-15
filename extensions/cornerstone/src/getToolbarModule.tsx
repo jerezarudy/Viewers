@@ -430,6 +430,37 @@ export default function getToolbarModule({ servicesManager, extensionManager }: 
       },
     },
     {
+      name: 'evaluate.dentalMeasurementTool',
+      evaluate: ({ viewportId, button, disabledText }) => {
+        const toolGroup = toolGroupService.getToolGroupForViewport(viewportId);
+
+        if (!toolGroup) {
+          return;
+        }
+
+        const toolName = toolbarService.getToolNameForButton(button);
+
+        if (!toolGroup.hasTool(toolName)) {
+          return getDisabledState(disabledText);
+        }
+
+        let activeMeasurementId = '';
+        try {
+          activeMeasurementId = sessionStorage.getItem('ohif.dental.activeMeasurementId') || '';
+        } catch {
+          activeMeasurementId = '';
+        }
+
+        const isPrimaryActive = toolGroup.getActivePrimaryMouseButtonTool() === toolName;
+
+        return {
+          disabled: false,
+          isActive:
+            Boolean(activeMeasurementId) && activeMeasurementId === button.id && isPrimaryActive,
+        };
+      },
+    },
+    {
       name: 'evaluate.action',
       evaluate: () => {
         return {

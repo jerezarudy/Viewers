@@ -76,7 +76,52 @@ function App({
     };
 
     run();
+    // App init should run once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!init) {
+      return;
+    }
+
+    const root = init.appConfig as Record<string, unknown>;
+    const dental = root?.dental as Record<string, unknown> | undefined;
+    const simpleLogin = dental?.simpleLogin as Record<string, unknown> | undefined;
+    const simpleLoginEnabled = !!simpleLogin?.enabled;
+
+    const oidc = root?.oidc;
+    const oidcEnabled = Array.isArray(oidc) && oidc.length > 0;
+    if (!simpleLoginEnabled || oidcEnabled) {
+      return;
+    }
+
+    const { userAuthenticationService } = init.servicesManager.services;
+
+    userAuthenticationService.set({ enabled: true });
+    userAuthenticationService.setServiceImplementation({
+      getAuthorizationHeader: () => {
+        const user = userAuthenticationService.getUser();
+        const token = user?.access_token || user?.token;
+        // return token ? { Authorization: `Bearer ${token}` } : undefined;
+      },
+    });
+
+    try {
+      const raw = window.localStorage.getItem('ohif.simpleLogin.user');
+      if (raw) {
+        const parsed = JSON.parse(raw) as { username?: string; token?: string };
+        if (parsed?.token) {
+          userAuthenticationService.setUser({
+            username: parsed.username,
+            access_token: parsed.token,
+          });
+        }
+      }
+    } catch {
+      // no-op
+    }
+  }, [init]);
 
   if (!init) {
     return null;
@@ -92,6 +137,7 @@ function App({
   // Set appConfig
   const appConfigState = init.appConfig;
   const { routerBasename, modes, dataSources, oidc, showStudyList } = appConfigState;
+  const oidcEnabled = Array.isArray(oidc) && oidc.length > 0;
 
   // get the maximum 3D texture size
   const canvas = document.createElement('canvas');
@@ -157,7 +203,7 @@ function App({
     showStudyList,
   });
 
-  if (oidc) {
+  if (oidcEnabled) {
     authRoutes = (
       <OpenIdConnectRoutes
         oidc={oidc}

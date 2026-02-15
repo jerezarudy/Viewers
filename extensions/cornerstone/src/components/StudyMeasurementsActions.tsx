@@ -7,6 +7,12 @@ export function StudyMeasurementsActions({ items, StudyInstanceUID, measurementF
   const { commandsManager } = useSystem();
   const { t } = useTranslation('MeasurementTable');
   const disabled = !items?.length;
+  let dentalEnabled = false;
+  try {
+    dentalEnabled = sessionStorage.getItem('ohif.dental.enabled') === '1';
+  } catch {
+    dentalEnabled = false;
+  }
 
   if (disabled) {
     return null;
@@ -20,14 +26,17 @@ export function StudyMeasurementsActions({ items, StudyInstanceUID, measurementF
           variant="ghost"
           className="pl-1.5"
           onClick={() => {
-            commandsManager.runCommand('downloadCSVMeasurementsReport', {
-              StudyInstanceUID,
-              measurementFilter,
-            });
+            commandsManager.runCommand(
+              dentalEnabled ? 'downloadJSONMeasurementsReport' : 'downloadCSVMeasurementsReport',
+              {
+                StudyInstanceUID,
+                measurementFilter,
+              }
+            );
           }}
         >
           <Icons.Download className="h-5 w-5" />
-          <span className="pl-1">CSV</span>
+          <span className="pl-1">{dentalEnabled ? 'JSON' : 'CSV'}</span>
         </Button>
 
         <Button

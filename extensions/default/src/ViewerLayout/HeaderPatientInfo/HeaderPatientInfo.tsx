@@ -22,6 +22,7 @@ function HeaderPatientInfo({ servicesManager, appConfig }: withAppTypes) {
     appConfig.showPatientInfo === PatientInfoVisibility.VISIBLE_READONLY;
   const [expanded, setExpanded] = useState(initialExpandedState);
   const { patientInfo, isMixedPatients } = usePatientInfo(servicesManager);
+  // console.log('HeaderPatientInfo patientInfo->', patientInfo);
 
   useEffect(() => {
     if (isMixedPatients && expanded) {

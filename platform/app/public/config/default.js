@@ -3,6 +3,12 @@
 window.config = {
   name: 'config/default.js',
   routerBasename: null,
+  dental: {
+    simpleLogin: {
+      enabled: true,
+      backendUrl: 'https://ohif-backend.vercel.app',
+    },
+  },
   // whiteLabeling: {},
   extensions: [],
   modes: [],

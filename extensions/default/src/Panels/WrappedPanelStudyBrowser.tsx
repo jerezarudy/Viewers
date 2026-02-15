@@ -23,6 +23,8 @@ function WrappedPanelStudyBrowser() {
     _createGetImageSrcFromImageIdFn(extensionManager),
     []
   );
+
+  console.log('_getStudiesForPatientByMRN 2->', _getStudiesForPatientByMRN);
   const _requestDisplaySetCreationForStudy = requestDisplaySetCreationForStudy.bind(
     null,
     dataSource

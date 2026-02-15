@@ -230,6 +230,30 @@ const connectToolsToMeasurementService = ({
       } = annotationAddedEventDetail;
       const { toolName } = metadata;
 
+      // Dental Mode: default measurement label based on the selected dental measurement item
+      try {
+        const dentalEnabled = sessionStorage.getItem('ohif.dental.enabled') === '1';
+        const activeDentalMeasurementId = sessionStorage.getItem('ohif.dental.activeMeasurementId');
+
+        if (dentalEnabled && activeDentalMeasurementId) {
+          const labelById: Record<string, string> = {
+            DentalPALength: 'PA length',
+            DentalCanalAngle: 'Canal Angle',
+            DentalCrownWidth: 'Crown Width',
+            DentalRootLength: 'Root Length',
+          };
+
+          const dentalLabel = labelById[activeDentalMeasurementId];
+          const currentLabel = annotationAddedEventDetail?.annotation?.data?.label;
+
+          if (dentalLabel && !currentLabel) {
+            annotationAddedEventDetail.annotation.data.label = dentalLabel;
+          }
+        }
+      } catch {
+        // ignore storage errors
+      }
+
       if (csToolsEvent.type === completedEvt && toolName === toolNames.CalibrationLine) {
         // show modal to input the measurement (mm)
         onCompletedCalibrationLine(servicesManager, csToolsEvent)

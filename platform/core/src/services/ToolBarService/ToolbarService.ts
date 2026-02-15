@@ -24,6 +24,11 @@ export const TOOLBAR_SECTIONS = {
   secondary: 'secondary',
 
   /**
+   * Dental toolbar
+   */
+  dental: 'dental',
+
+  /**
    * Viewport action menu sections
    */
   viewportActionMenu: {

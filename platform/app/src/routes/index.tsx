@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ErrorBoundary } from '@ohif/ui-next';
 
 // Route Components
@@ -10,6 +10,8 @@ import Debug from './Debug';
 import NotFound from './NotFound';
 import buildModeRoutes from './buildModeRoutes';
 import PrivateRoute from './PrivateRoute';
+import SimpleLogin from './SimpleLogin';
+import SimpleLogout from './SimpleLogout';
 import PropTypes from 'prop-types';
 import { routerBasename } from '../utils/publicUrl';
 import { useAppConfig } from '@state';
@@ -87,6 +89,14 @@ const bakedInRoutes = [
     path: `/localbasic`,
     children: Local.bind(null, { modePath: 'viewer/dicomlocal' }),
   },
+  {
+    path: `/login`,
+    children: SimpleLogin,
+  },
+  {
+    path: `/simple-logout`,
+    children: SimpleLogout,
+  },
 ];
 
 // NOT FOUND (404)
@@ -161,6 +171,14 @@ const createRoutes = ({
     );
   }
 
+  RouteWithErrorBoundary.propTypes = {
+    route: PropTypes.shape({
+      path: PropTypes.string,
+      props: PropTypes.object,
+      children: PropTypes.oneOfType([PropTypes.func, PropTypes.elementType]),
+    }).isRequired,
+  };
+
   const { userAuthenticationService } = servicesManager.services;
 
   // All routes are private by default and then we let the user auth service
@@ -169,14 +187,33 @@ const createRoutes = ({
   return (
     <Routes>
       {allRoutes.map((route, i) => {
+        const UnauthenticatedRedirect = () => {
+          const [appConfig] = useAppConfig();
+          const location = useLocation();
+          const root = appConfig as Record<string, unknown>;
+          const dental = root?.dental as Record<string, unknown> | undefined;
+          const simpleLogin = dental?.simpleLogin as Record<string, unknown> | undefined;
+          const isSimpleLoginEnabled = !!simpleLogin?.enabled;
+
+          if (!isSimpleLoginEnabled) {
+            return userAuthenticationService.handleUnauthenticated();
+          }
+
+          const redirect = `${location.pathname}${location.search || ''}`;
+          return (
+            <Navigate
+              to={`/login?redirect=${encodeURIComponent(redirect)}`}
+              replace={true}
+            />
+          );
+        };
+
         return route.private === true ? (
           <Route
             key={i}
             path={route.path}
             element={
-              <PrivateRoute
-                handleUnauthenticated={() => userAuthenticationService.handleUnauthenticated()}
-              >
+              <PrivateRoute handleUnauthenticated={() => <UnauthenticatedRedirect />}>
                 <RouteWithErrorBoundary route={route} />
               </PrivateRoute>
             }

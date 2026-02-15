@@ -17,6 +17,7 @@ import NavBar from '../NavBar';
 
 interface HeaderProps {
   children?: ReactNode;
+  className?: string;
   menuOptions: Array<{
     title: string;
     icon?: string;
@@ -35,6 +36,7 @@ interface HeaderProps {
 
 function Header({
   children,
+  className,
   menuOptions,
   isReturnEnabled = true,
   onClickReturnButton,
@@ -60,7 +62,7 @@ function Header({
         isSticky={isSticky}
         {...props}
       >
-        <div className="relative h-[48px] items-center">
+        <div className={classNames('relative h-[48px] items-center', className)}>
           <div className="absolute left-0 top-1/2 flex -translate-y-1/2 items-center">
             <div
               className={classNames(

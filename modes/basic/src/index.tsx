@@ -221,6 +221,8 @@ export const toolbarSections = {
     'MoreTools',
   ],
 
+  [TOOLBAR_SECTIONS.dental]: ['DentalMeasurementTools'],
+
   [TOOLBAR_SECTIONS.viewportActionMenu.topLeft]: ['orientationMenu', 'dataOverlayMenu'],
 
   [TOOLBAR_SECTIONS.viewportActionMenu.bottomMiddle]: ['AdvancedRenderingControls'],
@@ -252,7 +254,12 @@ export const toolbarSections = {
     'SplineROI',
     'LivewireContour',
   ],
-
+  DentalMeasurementTools: [
+    'DentalPALength',
+    'DentalCanalAngle',
+    'DentalCrownWidth',
+    'DentalRootLength',
+  ],
   MoreTools: [
     'Reset',
     'rotate-right',

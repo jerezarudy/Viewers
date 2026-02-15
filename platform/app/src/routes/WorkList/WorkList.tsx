@@ -11,6 +11,8 @@ import filtersMeta from './filtersMeta.js';
 import { useAppConfig } from '@state';
 import { useDebounce, useSearchParams } from '../../hooks';
 import { utils, Types as coreTypes } from '@ohif/core';
+import { useUserAuthentication } from '@ohif/ui-next';
+import { jwtDecode } from 'jwt-decode';
 
 import {
   StudyListExpandedRow,
@@ -60,6 +62,9 @@ function WorkList({
   onRefresh,
   servicesManager,
 }: withAppTypes) {
+  const authContext: unknown = useUserAuthentication();
+  const authApi = (Array.isArray(authContext) ? authContext[1] : null) as AuthApi | null;
+
   const { show, hide } = useModal();
   const { t } = useTranslation();
   // ~ Modes
@@ -172,6 +177,27 @@ function WorkList({
     return () => {
       document.body.classList.remove('bg-black');
     };
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem('ohif.dentalBackend.token');
+
+    if (!token) return;
+
+    const decoded = jwtDecode(token);
+    const expiresIn = decoded.exp * 1000 - Date.now();
+
+    console.log('Token expires in (ms)->', expiresIn);
+
+    if (expiresIn <= 0) {
+      window.location.replace('/login');
+    } else {
+      const timer = setTimeout(() => {
+        window.location.replace('/login');
+      }, expiresIn);
+
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   // Sync URL query parameters with filters
@@ -505,12 +531,26 @@ function WorkList({
     },
   ];
 
-  if (appConfig.oidc) {
+  const root = appConfig as Record<string, unknown>;
+  const dental = root?.dental as Record<string, unknown> | undefined;
+  const simpleLogin = dental?.simpleLogin as Record<string, unknown> | undefined;
+  const simpleLoginEnabled = !!simpleLogin?.enabled;
+  const oidcEnabled = Array.isArray(appConfig.oidc) && appConfig.oidc.length > 0;
+  if (oidcEnabled) {
     menuOptions.push({
       icon: 'power-off',
       title: t('Header:Logout'),
       onClick: () => {
         navigate(`/logout?redirect_uri=${encodeURIComponent(window.location.href)}`);
+      },
+    });
+  }
+  if (simpleLoginEnabled) {
+    menuOptions.push({
+      icon: 'power-off',
+      title: t('Header:Logout'),
+      onClick: () => {
+        navigate('/simple-logout');
       },
     });
   }
