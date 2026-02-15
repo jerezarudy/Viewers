@@ -341,3 +341,155 @@ MIT © [OHIF](https://github.com/OHIF)
 <!-- prettier-ignore-end -->
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FOHIF%2FViewers.svg?type=large&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2FOHIF%2FViewers?ref=badge_large&issueType=license)
+
+
+
+## OHIF Viewer Customizations: Simple Login + Dental Mode
+
+This README documents the custom **Simple Login** flow and the **Dental Mode** UI/features present in this repo. It intentionally omits upstream OHIF documentation.
+
+## Quick start (local)
+
+From repo root:
+
+```bash
+yarn install
+yarn dev
+```
+
+## Simple Login
+
+### Enable/Configure
+
+Edit `platform/app/public/config/default.js`:
+
+```js
+window.config = {
+  dental: {
+    simpleLogin: {
+      enabled: true,
+      backendUrl: 'https://ohif-backend.vercel.app',
+    },
+    // Optional (used by Dental Mode header)
+    // practiceName: 'My Practice',
+  },
+};
+```
+
+Behavior:
+
+- When `dental.simpleLogin.enabled === true` and OIDC is **not** enabled, the app enables the user authentication gate (see `platform/app/src/App.tsx`).
+- Private routes redirect unauthenticated users to `/login?redirect=<current path>` (see `platform/app/src/routes/index.tsx` and `platform/app/src/routes/PrivateRoute.tsx`).
+
+### Routes
+
+- `GET /login`: shows the Simple Login screen (`platform/app/src/routes/SimpleLogin.tsx`)
+- `GET /simple-logout`: clears stored credentials and redirects to `/login` (`platform/app/src/routes/SimpleLogout.tsx`)
+
+### Backend contract
+
+The login page sends:
+
+- `POST <backendUrl>/auth/login` with JSON body `{ "username": "...", "password": "..." }`
+- Expects JSON response `{ "token": "<JWT>" }` (see `platform/app/src/routes/SimpleLogin.tsx`)
+
+Important:
+
+- The token is treated as a **JWT**. The WorkList decodes it and relies on the `exp` claim to auto-redirect when it expires (`platform/app/src/routes/WorkList/WorkList.tsx`).
+
+### Storage keys
+
+Local storage:
+
+- `ohif.dentalBackend.url`: resolved backend URL (config value or last used)
+- `ohif.dentalBackend.token`: login token (JWT)
+- `ohif.simpleLogin.user`: `{ username, token }` persisted for restoring session
+
+## Dental Mode
+
+Dental Mode is a viewer header toggle that:
+
+- Switches the toolbar to a dedicated **Dental** section
+- Defaults the layout to **2x2** ("four up")
+- Adds a tooth selector UI for pre-labeling annotations
+
+Implementation: `extensions/default/src/ViewerLayout/ViewerHeader.tsx`.
+
+### Toggle behavior
+
+When enabled:
+
+- Stores state in session storage (keys listed below)
+- Runs `setViewportGridLayout` to `2x2`
+- Sets the default active tool to `Zoom`
+
+When disabled:
+
+- Restores the previous grid layout (captured when Dental Mode first toggles on)
+
+### Tooth selector
+
+In Dental Mode, the header shows:
+
+- Tooth numbering: `Universal` (1-32) or `FDI` (11-48)
+- Selected tooth dropdown
+- Toggle button to enable/disable tooth selection mode
+
+When tooth selection is enabled and a tooth is selected, the Arrow Annotate text dialog defaults to the selected tooth value (`extensions/cornerstone/src/commandsModule.ts` -> `arrowTextCallback`).
+
+Selecting a dental measurement tool automatically disables the tooth selector (event: `ohif:dental:measurementToolSelected`).
+
+### Dental measurement tools
+
+Dental tools live in the **basic** mode toolbar configuration:
+
+- `modes/basic/src/index.tsx` registers the `TOOLBAR_SECTIONS.dental` section.
+- `modes/basic/src/toolbarButtons.ts` defines tools:
+  - `DentalPALength` (uses Length tool)
+  - `DentalCanalAngle` (uses Angle tool)
+  - `DentalCrownWidth` (uses Length tool)
+  - `DentalRootLength` (uses Length tool)
+
+When a dental tool is clicked:
+
+- The underlying Cornerstone tool is activated (`setToolActiveToolbar`)
+- The selected dental measurement id is stored via `setDentalActiveMeasurement` (`extensions/cornerstone/src/commandsModule.ts`)
+- Toolbar active state is driven by `evaluate.dentalMeasurementTool` (`extensions/cornerstone/src/getToolbarModule.tsx`)
+
+### Default measurement labels (Dental Mode)
+
+When Dental Mode is enabled and a dental measurement tool is active, new measurements default their label to:
+
+- `PA length`, `Canal Angle`, `Crown Width`, `Root Length`
+
+Implementation: `extensions/cornerstone/src/initMeasurementService.ts`.
+
+### Measurement export (Dental Mode)
+
+In Dental Mode, the Measurements panel export button downloads a JSON report (`MeasurementReport.json`) instead of CSV:
+
+- UI switch: `extensions/cornerstone/src/components/StudyMeasurementsActions.tsx`
+- Command: `downloadJSONMeasurementsReport` in `extensions/cornerstone/src/commandsModule.ts`
+
+### Session storage keys
+
+Set by Dental Mode UI / commands:
+
+- `ohif.dental.enabled`: `'1' | '0'`
+- `ohif.dental.toothNumbering`: `'universal' | 'fdi'`
+- `ohif.dental.selectedTooth`: string
+- `ohif.dental.toothSelectorEnabled`: `'1' | '0'`
+- `ohif.dental.activeMeasurementId`: e.g. `DentalPALength`
+- `ohif.dental.annotationPreset`: (read-only currently) optional default label preset for Arrow Annotate
+
+## Files changed (login + dental)
+
+- Config: `platform/app/public/config/default.js`
+- Auth gate + session restore: `platform/app/src/App.tsx`
+- Auth redirect wiring: `platform/app/src/routes/index.tsx`, `platform/app/src/routes/PrivateRoute.tsx`
+- Simple auth routes: `platform/app/src/routes/SimpleLogin.tsx`, `platform/app/src/routes/SimpleLogout.tsx`
+- WorkList token expiry redirect + logout menu: `platform/app/src/routes/WorkList/WorkList.tsx`
+- Dental Mode header UI + behavior: `extensions/default/src/ViewerLayout/ViewerHeader.tsx`
+- Dental toolbar section + buttons: `modes/basic/src/index.tsx`, `modes/basic/src/toolbarButtons.ts`
+- Dental tool evaluation + commands: `extensions/cornerstone/src/getToolbarModule.tsx`, `extensions/cornerstone/src/commandsModule.ts`
+- Dental label defaults + export behavior: `extensions/cornerstone/src/initMeasurementService.ts`, `extensions/cornerstone/src/components/StudyMeasurementsActions.tsx`
